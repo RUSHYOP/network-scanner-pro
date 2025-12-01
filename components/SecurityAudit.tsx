@@ -17,7 +17,7 @@ export default function SecurityAudit() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       <div className="space-y-3">
         <div>
           <label className="block text-sm font-medium mb-1">

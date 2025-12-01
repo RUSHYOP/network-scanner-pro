@@ -116,20 +116,20 @@ export default function Dashboard() {
               className="glass-card p-4 md:p-6 hover-glow"
             >
               {/* Tool Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-3 md:mb-4">
                 <div className="flex items-center space-x-2 md:space-x-3">
                   <div className="bg-white text-black w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center flex-shrink-0">
                     {tool.icon}
                   </div>
                   <div>
-                    <h3 className="text-lg md:text-xl font-semibold text-white">{tool.title}</h3>
+                    <h3 className="text-base md:text-lg lg:text-xl font-semibold text-white">{tool.title}</h3>
                     <p className="text-xs md:text-sm text-gray-400">{tool.description}</p>
                   </div>
                 </div>
               </div>
 
               {/* Tool Component */}
-              <div className="mt-4">
+              <div className="mt-3 md:mt-4">
                 {tool.component}
               </div>
             </div>

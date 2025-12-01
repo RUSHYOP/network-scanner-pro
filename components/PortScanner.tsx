@@ -76,11 +76,11 @@ export default function PortScanner() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       {/* Configuration Form */}
-      <div className="space-y-3">
+      <div className="space-y-2 md:space-y-3">
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label className="block text-xs md:text-sm font-medium mb-1">
             Target Host/IP <span className="text-red-500">*</span>
           </label>
           <input
@@ -88,48 +88,48 @@ export default function PortScanner() {
             value={target}
             onChange={(e) => setTarget(e.target.value)}
             placeholder="192.168.1.1 or example.com"
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-gray-500"
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-gray-500"
           />
           <p className="text-xs text-gray-400 mt-1">
             Example: 192.168.1.1, scanme.nmap.org, localhost
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Port Range</label>
+            <label className="block text-xs md:text-sm font-medium mb-1">Port Range</label>
             <input
               type="text"
               value={portRange}
               onChange={(e) => setPortRange(e.target.value)}
               placeholder="1-1000"
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-gray-500"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-gray-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Scan Type</label>
+            <label className="block text-xs md:text-sm font-medium mb-1">Scan Type</label>
             <select
               value={scanType}
               onChange={(e) => setScanType(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
               style={{ colorScheme: 'dark' }}
             >
               <option value="tcp" className="bg-gray-900 text-white">TCP</option>
               <option value="udp" className="bg-gray-900 text-white">UDP</option>
-              <option value="syn" className="bg-gray-900 text-white">SYN Stealth</option>
+              <option value="syn" className="bg-gray-900 text-white">SYN</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Timeout (ms)</label>
+            <label className="block text-xs md:text-sm font-medium mb-1">Timeout (ms)</label>
             <input
               type="number"
               value={timeout}
               onChange={(e) => setTimeout(Number(e.target.value))}
               min="100"
               max="5000"
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-white text-white"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-white text-white"
             />
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function PortScanner() {
         <button
           onClick={handleScan}
           disabled={scanning || !target}
-          className="w-full bg-white text-black px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          className="w-full bg-white text-black px-4 py-2.5 md:py-3 rounded-lg text-sm md:text-base font-semibold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           {scanning ? (
             <>
@@ -165,9 +165,9 @@ export default function PortScanner() {
 
       {/* Results */}
       {results.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="font-semibold flex items-center space-x-2 text-white">
+        <div className="space-y-2 md:space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h4 className="font-semibold flex items-center space-x-2 text-white text-sm md:text-base">
               <CheckCircle className="w-5 h-5 text-white" />
               <span>Found {results.length} open ports</span>
             </h4>

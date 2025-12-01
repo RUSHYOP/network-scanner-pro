@@ -10,7 +10,7 @@ export default function PacketSniffer() {
   const [packets, setPackets] = useState<any[]>([])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       <div className="space-y-3">
         <div>
           <label className="block text-sm font-medium mb-1">Network Interface</label>

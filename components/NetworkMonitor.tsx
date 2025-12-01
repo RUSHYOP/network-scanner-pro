@@ -13,7 +13,7 @@ export default function NetworkMonitor() {
   })
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">

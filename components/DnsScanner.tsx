@@ -65,11 +65,11 @@ export default function DnsScanner() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       {/* Configuration Form */}
-      <div className="space-y-3">
+      <div className="space-y-2 md:space-y-3">
         <div>
-          <label className="block text-sm font-medium mb-1">
+          <label className="block text-xs md:text-sm font-medium mb-1">
             Target Domain <span className="text-red-500">*</span>
           </label>
           <input
@@ -77,37 +77,37 @@ export default function DnsScanner() {
             value={target}
             onChange={(e) => setTarget(e.target.value)}
             placeholder="example.com"
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-gray-500"
+            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-white text-white placeholder-gray-500"
           />
           <p className="text-xs text-gray-400 mt-1">
             Example: google.com, github.com, example.org
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Wordlist</label>
+            <label className="block text-xs md:text-sm font-medium mb-1">Wordlist</label>
             <select
               value={wordlist}
               onChange={(e) => setWordlist(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
               style={{ colorScheme: 'dark' }}
             >
-              <option value="common" className="bg-gray-900 text-white">Common (100 entries)</option>
-              <option value="medium" className="bg-gray-900 text-white">Medium (1,000 entries)</option>
-              <option value="large" className="bg-gray-900 text-white">Large (10,000 entries)</option>
+              <option value="common" className="bg-gray-900 text-white">Common (100)</option>
+              <option value="medium" className="bg-gray-900 text-white">Medium (1K)</option>
+              <option value="large" className="bg-gray-900 text-white">Large (10K)</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Concurrency</label>
+            <label className="block text-xs md:text-sm font-medium mb-1">Concurrency</label>
             <input
               type="number"
               value={concurrency}
               onChange={(e) => setConcurrency(Number(e.target.value))}
               min="1"
               max="500"
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-white text-white"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-white text-white"
             />
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function DnsScanner() {
         <button
           onClick={handleScan}
           disabled={scanning || !target}
-          className="w-full bg-white text-black px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          className="w-full bg-white text-black px-4 py-2.5 md:py-3 rounded-lg text-sm md:text-base font-semibold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           {scanning ? (
             <>
@@ -143,27 +143,27 @@ export default function DnsScanner() {
 
       {/* Results */}
       {results.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="font-semibold flex items-center space-x-2 text-white">
-              <CheckCircle className="w-5 h-5 text-white" />
+        <div className="space-y-2 md:space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h4 className="font-semibold flex items-center space-x-2 text-white text-sm md:text-base">
+              <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
               <span>Found {results.length} subdomains</span>
             </h4>
             <button
               onClick={exportResults}
-              className="flex items-center space-x-2 text-sm bg-zinc-900 px-3 py-1 rounded-lg hover:bg-zinc-800 transition text-white border border-zinc-700"
+              className="flex items-center space-x-1 md:space-x-2 text-xs md:text-sm bg-zinc-900 px-2 md:px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition text-white border border-zinc-700"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3 h-3 md:w-4 md:h-4" />
               <span>Export</span>
             </button>
           </div>
 
-          <div className="max-h-64 overflow-y-auto space-y-2 bg-zinc-950 rounded-lg p-3">
+          <div className="max-h-64 overflow-y-auto space-y-1.5 md:space-y-2 bg-zinc-950 rounded-lg p-2 md:p-3">
             {results.map((result, index) => (
-              <div key={index} className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-white">{result.subdomain}</span>
-                  <span className="text-gray-400">{result.ip}</span>
+              <div key={index} className="bg-zinc-900 border border-zinc-800 rounded px-2 md:px-3 py-1.5 md:py-2 text-xs md:text-sm">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <span className="font-mono text-white text-xs md:text-sm break-all">{result.subdomain}</span>
+                  <span className="text-gray-400 text-xs">{result.ip}</span>
                 </div>
               </div>
             ))}
