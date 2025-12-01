@@ -181,7 +181,7 @@ export default function DnsScanner() {
               <li>Enter a target domain (e.g., example.com)</li>
               <li>Choose a wordlist size based on scan depth</li>
               <li>Adjust concurrency for faster scanning (higher = faster but more aggressive)</li>
-              <li>Click "Start DNS Scan" and wait for results</li>
+              <li>Click &quot;Start DNS Scan&quot; and wait for results</li>
               <li>Export results as JSON for further analysis</li>
             </ol>
           </div>
