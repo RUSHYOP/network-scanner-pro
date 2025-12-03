@@ -8,6 +8,57 @@ export default function PacketSniffer() {
   const [filter, setFilter] = useState('')
   const [capturing, setCapturing] = useState(false)
   const [packets, setPackets] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleCapture = async () => {
+    if (capturing) {
+      setCapturing(false)
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    setCapturing(true)
+
+    try {
+      const response = await fetch('/api/packet-sniffer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          interface: interface_,
+          filter: filter,
+          duration: 5
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to capture packets')
+      }
+
+      setPackets(data.packets)
+    } catch (err: any) {
+      setError(err.message)
+      setCapturing(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const exportPCAP = () => {
+    const dataStr = JSON.stringify(packets, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `capture_${new Date().getTime()}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="space-y-3 md:space-y-4">
@@ -41,14 +92,17 @@ export default function PacketSniffer() {
         </div>
 
         <button
-          onClick={() => setCapturing(!capturing)}
-          className={`w-full px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2 ${
+          onClick={handleCapture}
+          disabled={loading}
+          className={`w-full px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed ${
             capturing
               ? 'bg-red-600 hover:bg-red-700 text-white'
               : 'bg-white hover:bg-gray-200 text-black'
           }`}
         >
-          {capturing ? (
+          {loading ? (
+            <span>Capturing...</span>
+          ) : capturing ? (
             <>
               <Square className="w-4 h-4" />
               <span>Stop Capture</span>
@@ -62,11 +116,19 @@ export default function PacketSniffer() {
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-500/20 border border-red-500 rounded-lg p-3 text-red-400">
+          {error}
+        </div>
+      )}
+
       {packets.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-semibold">Captured {packets.length} packets</span>
-            <button className="flex items-center space-x-2 text-sm bg-zinc-900 px-3 py-1 rounded-lg hover:bg-zinc-800 transition text-white border border-zinc-700">
+            <button 
+              onClick={exportPCAP}
+              className="flex items-center space-x-2 text-sm bg-zinc-900 px-3 py-1 rounded-lg hover:bg-zinc-800 transition text-white border border-zinc-700">
               <Download className="w-4 h-4" />
               <span>Export PCAP</span>
             </button>
