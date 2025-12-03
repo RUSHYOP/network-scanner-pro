@@ -7,7 +7,6 @@ import {
   Search, 
   Radar, 
   Network, 
-  Activity,
   Eye,
   ArrowLeft,
   HelpCircle
@@ -15,7 +14,6 @@ import {
 import DnsScanner from '@/components/DnsScanner'
 import PortScanner from '@/components/PortScanner'
 import PacketSniffer from '@/components/PacketSniffer'
-import NetworkMonitor from '@/components/NetworkMonitor'
 import SecurityAudit from '@/components/SecurityAudit'
 import HelpGuide from '@/components/HelpGuide'
 
@@ -46,14 +44,6 @@ export default function Dashboard() {
       description: 'Capture and analyze network packets',
       component: <PacketSniffer />,
       color: 'from-green-500 to-emerald-500'
-    },
-    {
-      id: 'monitor',
-      title: 'Network Monitor',
-      icon: <Activity className="w-6 h-6" />,
-      description: 'Real-time traffic monitoring',
-      component: <NetworkMonitor />,
-      color: 'from-orange-500 to-red-500'
     },
     {
       id: 'security',

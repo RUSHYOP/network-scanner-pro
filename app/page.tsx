@@ -38,12 +38,6 @@ export default function Home() {
       color: 'from-green-500 to-emerald-500'
     },
     {
-      icon: <Activity className="w-8 h-8" />,
-      title: 'Network Monitoring',
-      description: 'Live traffic monitoring with bandwidth usage and connection tracking',
-      color: 'from-orange-500 to-red-500'
-    },
-    {
       icon: <Layers className="w-8 h-8" />,
       title: 'Protocol Analysis',
       description: 'Deep packet inspection for HTTP, DNS, TCP, UDP, ICMP and more',
@@ -112,10 +106,6 @@ export default function Home() {
                   <span>Start Scanning</span>
                 </button>
               </Link>
-              <button className="w-full sm:w-auto glass-card px-8 py-4 rounded-lg font-semibold text-lg hover-glow flex items-center justify-center space-x-2 text-white">
-                <Globe className="w-5 h-5" />
-                <span>View Examples</span>
-              </button>
             </div>
           </motion.div>
 
