@@ -255,7 +255,7 @@ export default function NetworkMonitor() {
               <li>Shows network connection type and speed</li>
               <li>Monitors data transfer within the browser context</li>
               <li>Works on serverless platforms (Vercel, Netlify, etc.)</li>
-              <li className="text-blue-400">Note: Only monitors this browser tab's network activity</li>
+              <li className="text-blue-400">Note: Only monitors this browser tab&apos;s network activity</li>
             </ul>
           </div>
         </div>
