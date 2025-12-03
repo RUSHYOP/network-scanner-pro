@@ -1,25 +1,37 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Activity, ArrowUp, ArrowDown, AlertCircle } from 'lucide-react'
+import { Activity, ArrowUp, ArrowDown, AlertCircle, Wifi, RefreshCw } from 'lucide-react'
+
+interface NetworkStats {
+  bytesIn: number
+  bytesOut: number
+  requests: number
+}
+
+interface ResourceEntry {
+  name: string
+  transferSize: number
+  type: string
+  duration: number
+  timestamp: number
+}
 
 export default function NetworkMonitor() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<NetworkStats>({
     bytesIn: 0,
     bytesOut: 0,
-    packetsIn: 0,
-    packetsOut: 0,
-    connections: 0
+    requests: 0
   })
+  const [resources, setResources] = useState<ResourceEntry[]>([])
   const [networkInfo, setNetworkInfo] = useState<any>(null)
   const [monitoring, setMonitoring] = useState(false)
-  const [error, setError] = useState('')
-  const resourceObserverRef = useRef<PerformanceObserver | null>(null)
-  const startTimeRef = useRef<number>(0)
-  const requestCountRef = useRef<number>(0)
+  const [lastUpdate, setLastUpdate] = useState<number>(0)
+  
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const baselineRef = useRef<number>(0)
 
   const updateNetworkInfo = () => {
-    // Get network information if available (Chrome/Edge)
     if ('connection' in navigator) {
       const conn = (navigator as any).connection
       setNetworkInfo({
@@ -31,206 +43,215 @@ export default function NetworkMonitor() {
     }
   }
 
-  const monitorResources = () => {
-    // Monitor network requests using Performance API
-    if (!('PerformanceObserver' in window)) {
-      setError('Performance monitoring not supported in this browser')
-      return
-    }
+  const scanResources = () => {
+    // Get all resource timing entries since baseline
+    const entries = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
+    
+    let totalBytesIn = 0
+    let totalRequests = 0
+    const newResources: ResourceEntry[] = []
 
-    try {
-      // Clear previous observer
-      if (resourceObserverRef.current) {
-        resourceObserverRef.current.disconnect()
+    entries.forEach((entry) => {
+      // Only count entries after our baseline
+      if (entry.startTime > baselineRef.current) {
+        const size = entry.transferSize || entry.encodedBodySize || 0
+        totalBytesIn += size
+        totalRequests++
+
+        newResources.push({
+          name: entry.name,
+          transferSize: size,
+          type: entry.initiatorType,
+          duration: entry.duration,
+          timestamp: performance.timeOrigin + entry.startTime
+        })
       }
+    })
 
-      let bytesDownloaded = 0
-      let bytesUploaded = 0
-      let requestCount = 0
+    setStats({
+      bytesIn: totalBytesIn,
+      bytesOut: 0, // Browser API doesn't expose upload size reliably
+      requests: totalRequests
+    })
 
-      resourceObserverRef.current = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.entryType === 'resource') {
-            const resourceEntry = entry as PerformanceResourceTiming
-            
-            // Approximate download size (transferSize includes headers)
-            if (resourceEntry.transferSize) {
-              bytesDownloaded += resourceEntry.transferSize
-              requestCount++
-            }
-            
-            // Rough estimate for upload (for POST/PUT requests)
-            if (resourceEntry.encodedBodySize && resourceEntry.decodedBodySize) {
-              bytesUploaded += resourceEntry.encodedBodySize * 0.1 // Rough estimate
-            }
-          }
-        }
-
-        setStats(prev => ({
-          bytesIn: bytesDownloaded,
-          bytesOut: bytesUploaded,
-          packetsIn: requestCount,
-          packetsOut: Math.floor(requestCount * 0.3), // Estimate
-          connections: requestCount
-        }))
-        
-        requestCountRef.current = requestCount
-      })
-
-      resourceObserverRef.current.observe({ 
-        entryTypes: ['resource', 'navigation'] 
-      })
-    } catch (err: any) {
-      setError(`Monitoring error: ${err.message}`)
-    }
+    // Sort by timestamp descending and take last 20
+    setResources(newResources.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20))
+    setLastUpdate(Date.now())
   }
 
   const handleMonitoring = () => {
     if (monitoring) {
-      setMonitoring(false)
-      if (resourceObserverRef.current) {
-        resourceObserverRef.current.disconnect()
+      // Stop monitoring
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
       }
+      setMonitoring(false)
       return
     }
 
+    // Start monitoring
     setMonitoring(true)
-    setError('')
-    setStats({
-      bytesIn: 0,
-      bytesOut: 0,
-      packetsIn: 0,
-      packetsOut: 0,
-      connections: 0
-    })
     
-    startTimeRef.current = Date.now()
-    requestCountRef.current = 0
+    // Clear old entries and set baseline
+    performance.clearResourceTimings()
+    baselineRef.current = performance.now()
     
-    // Clear performance entries to start fresh
-    if (performance.clearResourceTimings) {
-      performance.clearResourceTimings()
-    }
+    // Reset stats
+    setStats({ bytesIn: 0, bytesOut: 0, requests: 0 })
+    setResources([])
     
     updateNetworkInfo()
-    monitorResources()
+    
+    // Poll for new resources every 500ms
+    intervalRef.current = setInterval(() => {
+      scanResources()
+      updateNetworkInfo()
+    }, 500)
+  }
+
+  // Trigger a test request
+  const triggerTestRequest = async () => {
+    try {
+      await fetch('/api/network-monitor?test=' + Date.now())
+    } catch {
+      // Ignore errors
+    }
   }
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-
-    if (monitoring) {
-      // Update network info periodically
-      interval = setInterval(updateNetworkInfo, 3000)
-    }
-
     return () => {
-      if (interval) clearInterval(interval)
-      if (resourceObserverRef.current) {
-        resourceObserverRef.current.disconnect()
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
       }
     }
-  }, [monitoring])
+  }, [])
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B'
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+  }
+
+  const formatTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleTimeString()
+  }
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'fetch': return 'bg-blue-500/20 text-blue-400'
+      case 'xmlhttprequest': return 'bg-green-500/20 text-green-400'
+      case 'script': return 'bg-yellow-500/20 text-yellow-400'
+      case 'css': return 'bg-purple-500/20 text-purple-400'
+      case 'img': return 'bg-pink-500/20 text-pink-400'
+      default: return 'bg-gray-500/20 text-gray-400'
+    }
+  }
 
   return (
     <div className="space-y-3 md:space-y-4">
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Download</span>
-            <ArrowDown className="w-4 h-4 text-white" />
+            <span className="text-sm text-gray-400">Downloaded</span>
+            <ArrowDown className="w-4 h-4 text-green-400" />
           </div>
           <div className="text-2xl font-bold text-white">
-            {(stats.bytesIn / 1024 / 1024).toFixed(2)} MB
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {stats.packetsIn.toLocaleString()} packets
+            {formatBytes(stats.bytesIn)}
           </div>
         </div>
 
         <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Upload</span>
-            <ArrowUp className="w-4 h-4 text-white" />
+            <span className="text-sm text-gray-400">Requests</span>
+            <Activity className="w-4 h-4 text-blue-400" />
           </div>
           <div className="text-2xl font-bold text-white">
-            {(stats.bytesOut / 1024 / 1024).toFixed(2)} MB
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {stats.packetsOut.toLocaleString()} packets
+            {stats.requests}
           </div>
         </div>
 
         <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Connections</span>
-            <Activity className="w-4 h-4 text-white" />
+            <span className="text-sm text-gray-400">Status</span>
+            <div className={`w-3 h-3 rounded-full ${monitoring ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
           </div>
-          <div className="text-2xl font-bold text-white">
-            {stats.connections}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Active
+          <div className="text-lg font-bold text-white">
+            {monitoring ? 'Active' : 'Stopped'}
           </div>
         </div>
       </div>
-
-      {error && (
-        <div className="bg-red-500/20 border border-red-500 rounded-lg p-3 text-red-400">
-          {error}
-        </div>
-      )}
 
       {networkInfo && monitoring && (
         <div className="bg-zinc-950 rounded-lg p-4">
-          <h4 className="font-semibold mb-3 text-white">Network Information</h4>
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="flex items-center space-x-2 mb-3">
+            <Wifi className="w-4 h-4 text-green-400" />
+            <h4 className="font-semibold text-white">Connection</h4>
+          </div>
+          <div className="grid grid-cols-4 gap-3 text-sm">
             <div>
-              <span className="text-gray-400">Connection Type:</span>
+              <span className="text-gray-400">Type</span>
               <div className="text-white font-semibold uppercase">{networkInfo.effectiveType}</div>
             </div>
             <div>
-              <span className="text-gray-400">Downlink Speed:</span>
+              <span className="text-gray-400">Speed</span>
               <div className="text-white font-semibold">{networkInfo.downlink} Mbps</div>
             </div>
             <div>
-              <span className="text-gray-400">Round Trip Time:</span>
+              <span className="text-gray-400">Latency</span>
               <div className="text-white font-semibold">{networkInfo.rtt} ms</div>
             </div>
             <div>
-              <span className="text-gray-400">Data Saver:</span>
-              <div className="text-white font-semibold">{networkInfo.saveData ? 'ON' : 'OFF'}</div>
+              <span className="text-gray-400">Updated</span>
+              <div className="text-white font-semibold text-xs">{lastUpdate ? formatTime(lastUpdate) : '-'}</div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="bg-zinc-950 rounded-lg p-4">
-        <h4 className="font-semibold mb-3 text-white">Browser Network Activity</h4>
-        <div className="text-sm text-gray-400">
-          {monitoring ? (
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>HTTP Requests:</span>
-                <span className="text-white font-semibold">{stats.packetsIn}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Active Since:</span>
-                <span className="text-white font-semibold">
-                  {Math.floor((Date.now() - startTimeRef.current) / 1000)}s ago
-                </span>
-              </div>
-              <div className="text-xs text-gray-500 mt-3">
-                Monitoring browser network requests. Navigate to websites or upload files to see activity.
-              </div>
+      {monitoring && (
+        <div className="bg-zinc-950 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-white">Recent Resources ({resources.length})</h4>
+            <button
+              onClick={triggerTestRequest}
+              className="text-xs bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded flex items-center space-x-1 text-gray-300"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Test Request</span>
+            </button>
+          </div>
+          
+          {resources.length === 0 ? (
+            <div className="text-sm text-gray-400 text-center py-6">
+              <Activity className="w-8 h-8 mx-auto mb-2 animate-pulse text-gray-600" />
+              Waiting for network activity...<br />
+              <span className="text-xs">Use Port Scan, DNS Scan, or click Test Request</span>
             </div>
           ) : (
-            <div className="text-center py-4">
-              Start monitoring to track browser network requests
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {resources.map((res, index) => (
+                <div key={index} className="bg-zinc-900 rounded p-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${getTypeColor(res.type)}`}>
+                      {res.type}
+                    </span>
+                    <span className="text-green-400 font-semibold">{formatBytes(res.transferSize)}</span>
+                  </div>
+                  <div className="text-gray-300 mt-1 truncate text-xs" title={res.name}>
+                    {res.name.split('/').pop() || res.name}
+                  </div>
+                  <div className="text-gray-500 mt-1 flex justify-between">
+                    <span>{res.duration.toFixed(0)}ms</span>
+                    <span>{formatTime(res.timestamp)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
-      </div>
+      )}
 
       <button 
         onClick={handleMonitoring}
@@ -248,13 +269,12 @@ export default function NetworkMonitor() {
         <div className="flex items-start space-x-2">
           <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-white">
-            <p className="font-semibold mb-1">Browser-Based Monitoring</p>
+            <p className="font-semibold mb-1">Browser Network Monitor</p>
             <ul className="list-disc list-inside space-y-1 text-gray-400">
-              <li>Tracks browser HTTP/HTTPS requests via Performance API</li>
-              <li>Shows network connection type and speed</li>
-              <li>Monitors data transfer within the browser context</li>
-              <li>Works on serverless platforms (Vercel, Netlify, etc.)</li>
-              <li className="text-blue-400">Note: Only monitors this browser tab&apos;s network activity</li>
+              <li>Tracks all resource loading (scripts, images, API calls)</li>
+              <li>Uses Performance Resource Timing API</li>
+              <li>Updates every 500ms while monitoring</li>
+              <li>Click &quot;Test Request&quot; or use other tools to see activity</li>
             </ul>
           </div>
         </div>
