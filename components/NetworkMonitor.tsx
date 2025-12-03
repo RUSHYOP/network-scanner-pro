@@ -234,15 +234,14 @@ export default function NetworkMonitor() {
 
       <button 
         onClick={handleMonitoring}
-        disabled={loading}
-        className={`w-full px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`w-full px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2 ${
           monitoring
             ? 'bg-red-600 hover:bg-red-700 text-white'
             : 'bg-white hover:bg-gray-200 text-black'
         }`}
       >
         <Activity className="w-4 h-4" />
-        <span>{loading ? 'Loading...' : monitoring ? 'Stop Monitoring' : 'Start Monitoring'}</span>
+        <span>{monitoring ? 'Stop Monitoring' : 'Start Monitoring'}</span>
       </button>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
